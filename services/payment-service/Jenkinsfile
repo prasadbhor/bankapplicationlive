@@ -1,0 +1,51 @@
+// Jenkinsfile for payment-service
+@Library('banking-shared-library') _
+
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = 'payment-service'
+        IMAGE_NAME   = "myregistry/${SERVICE_NAME}"
+        IMAGE_TAG    = "${env.BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('services/payment-service') { sh 'npm install' }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                dir('services/payment-service') { sh 'npm test' }
+            }
+        }
+
+        stage('Build & Push Docker Image') {
+            steps {
+                buildAndPushImage(
+                    servicePath: 'services/payment-service',
+                    imageName: "${IMAGE_NAME}",
+                    imageTag: "${IMAGE_TAG}"
+                )
+            }
+        }
+
+        stage('Trigger CD') {
+            steps {
+                echo "Notifying CD pipeline to deploy ${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
+    }
+
+    post {
+        success { echo "payment-service pipeline completed successfully." }
+        failure { echo "payment-service pipeline failed - check logs above." }
+    }
+}

@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  login-service:
+    build: ./services/login-service
+    container_name: login-service
+    ports:
+      - "4001:4001"
+
+  account-service:
+    build: ./services/account-service
+    container_name: account-service
+    ports:
+      - "4002:4002"
+
+  payment-service:
+    build: ./services/payment-service
+    container_name: payment-service
+    ports:
+      - "4003:4003"
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      - LOGIN_SERVICE_URL=http://login-service:4001
+      - ACCOUNT_SERVICE_URL=http://account-service:4002
+      - PAYMENT_SERVICE_URL=http://payment-service:4003
+    depends_on:
+      - login-service
+      - account-service
+      - payment-service

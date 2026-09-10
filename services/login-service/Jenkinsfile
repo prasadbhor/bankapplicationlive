@@ -1,0 +1,67 @@
+// Jenkinsfile for login-service
+// Each microservice has its own Jenkinsfile, but the heavy lifting
+// (docker build/push/deploy steps) is reused from a shared library
+// so the logic isn't duplicated across every service.
+
+@Library('banking-shared-library') _
+
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = 'login-service'
+        IMAGE_NAME   = "myregistry/${SERVICE_NAME}"
+        IMAGE_TAG    = "${env.BUILD_NUMBER}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                dir('services/login-service') {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                dir('services/login-service') {
+                    sh 'npm test'
+                }
+            }
+        }
+
+        stage('Build & Push Docker Image') {
+            steps {
+                // Shared library function - see shared/jenkins-shared-library/vars/buildAndPushImage.groovy
+                buildAndPushImage(
+                    servicePath: 'services/login-service',
+                    imageName: "${IMAGE_NAME}",
+                    imageTag: "${IMAGE_TAG}"
+                )
+            }
+        }
+
+        stage('Trigger CD') {
+            steps {
+                echo "Notifying CD pipeline (e.g. ArgoCD/Spinnaker) to deploy ${IMAGE_NAME}:${IMAGE_TAG}"
+                // Example: sh "curl -X POST https://cd-tool/deploy?service=login-service&tag=${IMAGE_TAG}"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "login-service pipeline completed successfully."
+        }
+        failure {
+            echo "login-service pipeline failed - check logs above."
+        }
+    }
+}

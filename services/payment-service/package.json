@@ -1,0 +1,13 @@
+{
+  "name": "payment-service",
+  "version": "1.0.0",
+  "description": "Demo payment microservice for banking app CI/CD learning",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"(demo) no real tests configured - replace with jest/mocha\" && exit 0"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
